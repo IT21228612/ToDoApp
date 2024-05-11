@@ -15,13 +15,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.example.ToDo.SplashActivity">
+        <activity android:name="com.example.ToDo.SplashActivity"
+            android:exported="true">
             <intent-filter>
                 <category android:name="android.intent.category.LAUNCHER" />
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
         <activity android:name="com.example.ToDo.MainActivity" />
+        <activity android:name=".AddNewTask" />
+
     </application>
 
 </manifest>

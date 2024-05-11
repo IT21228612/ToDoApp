@@ -1,78 +1,121 @@
-/*
- * Created by Seyed on 8/3/21, 2:05 PM
- * Copyright (c) 2021 . All rights reserved.
- * Last modified 8/3/21, 1:55 PM
- */
-
 package com.example.ToDo;
 
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.content.DialogInterface;
-import android.os.Bundle;
-import android.view.View;
-
+import com.example.ToDo.Model.Task;
+import com.example.ToDo.Utils.TaskAdapter;
+import com.example.ToDo.Utils.TaskDao;
+import com.example.ToDo.Utils.TaskDatabase;
+import com.example.ToDo.Utils.TaskRepository;
+import com.example.ToDo.Utils.TaskViewModel;
+import com.example.ToDo.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import com.example.ToDo.Adapters.ToDoAdapter;
-import com.example.ToDo.Model.ToDoModel;
-import com.example.ToDo.Utils.DatabaseHandler;
-
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity implements DialogCloseListener{
+public class MainActivity extends AppCompatActivity implements TaskAdapter.OnItemClickListener {
 
-    private DatabaseHandler db;
+    private TaskViewModel taskViewModel;
+    private TaskAdapter taskAdapter;
 
-    private RecyclerView tasksRecyclerView;
-    private ToDoAdapter tasksAdapter;
-    private FloatingActionButton fab;
+    // In your MainActivity
 
-    private List<ToDoModel> taskList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        // Initialize taskAdapter before setting the click listener
+        taskAdapter = new TaskAdapter(this);
+
+        taskAdapter.setOnItemClickListener(this);
+
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Objects.requireNonNull(getSupportActionBar()).hide();
+        getSupportActionBar().hide();
 
-        db = new DatabaseHandler(this);
-        db.openDatabase();
-
-        tasksRecyclerView = findViewById(R.id.tasksRecyclerView);
+        RecyclerView tasksRecyclerView = findViewById(R.id.tasksRecyclerView);
         tasksRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        tasksAdapter = new ToDoAdapter(db,MainActivity.this);
-        tasksRecyclerView.setAdapter(tasksAdapter);
+        taskAdapter = new TaskAdapter(this);
+        tasksRecyclerView.setAdapter(taskAdapter);
 
-        ItemTouchHelper itemTouchHelper = new
-                ItemTouchHelper(new RecyclerItemTouchHelper(tasksAdapter));
-        itemTouchHelper.attachToRecyclerView(tasksRecyclerView);
 
-        fab = findViewById(R.id.fab);
+        // Create an instance of TaskDao
+        TaskDao taskDao = TaskDatabase.getInstance(this).taskDao();
 
-        taskList = db.getAllTasks();
-        Collections.reverse(taskList);
 
-        tasksAdapter.setTasks(taskList);
+        // Create an instance of TaskRepository with TaskDao
+        TaskRepository taskRepository = new TaskRepository(taskDao);
 
+        // Pass the taskRepository to the TaskViewModel constructor
+        taskViewModel = new ViewModelProvider(this, new ViewModelProvider.AndroidViewModelFactory(getApplication())).get(TaskViewModel.class);
+        taskViewModel.init(taskRepository);
+
+
+
+        // Observe changes in task list
+        taskViewModel.getAllTasks().observe(this, new Observer<List<Task>>() {
+            @Override
+            public void onChanged(List<Task> tasks) {
+                taskAdapter.setTasks(tasks);
+            }
+        });
+
+        Log.d("jeewa", "jeewantha");
+
+        // Retrieve all tasks from the database using the ViewModel
+        taskViewModel.getAllTasks().observe(this, new Observer<List<Task>>() {
+
+            Log.d("jeewa", "jeewantha");
+            @Override
+            public void onChanged(List<Task> tasks) {
+                if (tasks != null) {
+                    for (Task task : tasks) {
+                        // Log each task
+                        Log.d("AddNewTask", "Task retrieved: Title - " + task.getName() + ", Description - " + task.getDescription() + ", Deadline - " + task.getDeadline());
+                    }
+                }else{
+                    Log.d("jeewa", "tasks null");
+                }
+            }
+        });
+
+
+        // Find FloatingActionButton and set OnClickListener
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AddNewTask.newInstance().show(getSupportFragmentManager(), AddNewTask.TAG);
+                // Start AddNewTask activity using Intent
+                Intent intent = new Intent(MainActivity.this, AddNewTask.class);
+                startActivity(intent);
             }
         });
+
+        RecyclerItemTouchHelper itemTouchHelper = new RecyclerItemTouchHelper(taskAdapter, taskViewModel, this);
+        new ItemTouchHelper(itemTouchHelper).attachToRecyclerView(tasksRecyclerView);
     }
 
     @Override
-    public void handleDialogClose(DialogInterface dialog){
-        taskList = db.getAllTasks();
-        Collections.reverse(taskList);
-        tasksAdapter.setTasks(taskList);
-        tasksAdapter.notifyDataSetChanged();
+    public void onItemClick(int position) {
+        // Get the task at the clicked position
+        Task clickedTask = taskAdapter.getTaskAtPosition(position);
+
+        // Start the edit activity and pass the task details
+        Intent intent = new Intent(MainActivity.this, EditTaskActivity.class);
+        intent.putExtra("task", clickedTask);
+        startActivity(intent);
     }
+
 }

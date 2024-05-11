@@ -22,7 +22,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="30dp"
         android:gravity="center"
-        android:text="Design By Seyed"
+        android:text="Design By Jeewa"
         android:textColor="#FFFFFF"
         android:textSize="20sp"
         android:textStyle="bold" />

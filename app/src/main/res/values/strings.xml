@@ -5,7 +5,7 @@
   -->
 
 <resources>
-    <string name="app_name">ToDo</string>
+    <string name="app_name">ToDo-V2</string>
     <string name="save">Save</string>
     <string name="new_task">New Task</string>
     <string name="tasks">Tasks</string>
